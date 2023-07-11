@@ -10,7 +10,7 @@ server:
   port: 8080
 
 authorization:
-  realm: lakea
+  realm: my-realm
   secret: w6q5w01eja97dx5fhwvye7rv5kuxn3zj
   identitykey: email
 
@@ -19,8 +19,8 @@ settings:
   audit: true
 
 filestore:
-  region: us-east-1
-  bucketname: vrsd
-  domain: https://sfo3.digitaloceanspaces.com
-  keyid: 23Z3MQOK2HJWEW63CEX6
-  secret: f/R/uRd31KSPQmIbj1fT+RXAC1Xe8QNKfNS5v8b3UtM
+  region: my_region
+  bucketname: mybucket_name
+  domain: my_domain
+  keyid: my_key
+  secret: my_secret

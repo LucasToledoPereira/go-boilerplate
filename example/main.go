@@ -11,7 +11,7 @@ import (
 	"github.com/LucasToledoPereira/go-boilerplate/internal/modules/user"
 )
 
-// @title Lakea API
+// @title Go Boilerplate API Example
 // @version 1.0
 // @description
 // @host localhost:8080
