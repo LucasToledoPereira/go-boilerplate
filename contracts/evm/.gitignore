@@ -1,0 +1,7 @@
+#dependencies
+node_modules
+typechain-types
+
+#cache
+cache
+

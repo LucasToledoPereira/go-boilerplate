@@ -1,0 +1,26 @@
+database:
+  host: localhost
+  port: 5432
+  user: root
+  password: root
+  dbname: root
+
+server:
+  host: 127.0.0.1
+  port: 8080
+
+authorization:
+  realm: lakea
+  secret: w6q5w01eja97dx5fhwvye7rv5kuxn3zj
+  identitykey: email
+
+settings:
+  multitenant: true
+  audit: true
+
+filestore:
+  region: us-east-1
+  bucketname: vrsd
+  domain: https://sfo3.digitaloceanspaces.com
+  keyid: 23Z3MQOK2HJWEW63CEX6
+  secret: f/R/uRd31KSPQmIbj1fT+RXAC1Xe8QNKfNS5v8b3UtM
