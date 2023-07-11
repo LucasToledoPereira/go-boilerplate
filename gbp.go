@@ -2,21 +2,36 @@ package gbp
 
 import (
 	"errors"
+	"mime/multipart"
 
-	"github.com/LucasToledoPereira/go-boilerplate/adapters/datastore"
 	"github.com/fatih/color"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	postgresadapter "github.com/LucasToledoPereira/go-boilerplate/adapters/datastore/postgres"
 	s3adapter "github.com/LucasToledoPereira/go-boilerplate/adapters/filestore/aws"
 
-	"github.com/LucasToledoPereira/go-boilerplate/adapters/filestore"
 	"github.com/LucasToledoPereira/go-boilerplate/config"
-	"github.com/LucasToledoPereira/go-boilerplate/internal/audit"
-	"github.com/LucasToledoPereira/go-boilerplate/internal/enums/codes"
 
+	"github.com/LucasToledoPereira/go-boilerplate/internal/enums/codes"
 	"github.com/LucasToledoPereira/go-boilerplate/internal/router"
 	"github.com/LucasToledoPereira/go-boilerplate/internal/server"
 )
+
+type IDatastoreAdapter interface {
+	New() (err error)
+	Migrate() (err error)
+	DB() (db *gorm.DB)
+}
+
+type IFilestoreAdapter interface {
+	New() error
+	GetDomain() string
+	Delete(key string, recordID uuid.UUID) error
+	Save(file multipart.File, filename string, path string, recordID uuid.UUID) (string, error)
+	GetTemporaryURL(key string, recordID uuid.UUID) (string, error)
+	SaveAndGetTemporaryURL(file multipart.File, filename string, path string, recordID uuid.UUID) (string, string, error)
+}
 
 /*
 * Para a conexão com a blockchain e correto funcionamento nós vamos necessitar:
@@ -32,14 +47,14 @@ type ModuleFunc func(input *ModuleFuncInput) (err error)
 type ModulesFuncChain []ModuleFunc
 type ModuleFuncInput struct {
 	Router    *router.Router
-	Datastore datastore.IDatastoreAdapter
-	Filestore filestore.IFilestoreAdapter
+	Datastore IDatastoreAdapter
+	Filestore IFilestoreAdapter
 }
 
 type Builder struct {
 	modulesChain ModulesFuncChain
-	datastore    datastore.IDatastoreAdapter
-	filestore    filestore.IFilestoreAdapter
+	datastore    IDatastoreAdapter
+	filestore    IFilestoreAdapter
 	//keystoreadapter
 	//emailadapter
 	router *router.Router
@@ -84,10 +99,10 @@ It checks if the adapter implements the IDatastoreAdapter or IFilestoreAdapter i
 func (builder *Builder) Use(adapterFns ...AdapterFunc) {
 	for _, adapterFn := range adapterFns {
 		adapter, _ := adapterFn()
-		if adp, ok := adapter.(datastore.IDatastoreAdapter); ok {
+		if adp, ok := adapter.(IDatastoreAdapter); ok {
 			builder.datastore = adp
 		}
-		if adp, ok := adapter.(filestore.IFilestoreAdapter); ok {
+		if adp, ok := adapter.(IFilestoreAdapter); ok {
 			builder.filestore = adp
 		}
 	}
@@ -99,7 +114,7 @@ This function returns the datastore adapter that is being used by the builder.
 If the adapter has already been set, it will be returned.
 Otherwise, an error will be returned indicating that no adapter has been found.
 */
-func (builder *Builder) Datastore() (datastore.IDatastoreAdapter, error) {
+func (builder *Builder) Datastore() (IDatastoreAdapter, error) {
 	if builder.datastore != nil {
 		return builder.datastore, nil
 	}
@@ -115,7 +130,7 @@ This function returns the filestore adapter that is being used by the builder.
 If the adapter has already been set, it will be returned.
 Otherwise, an error will be returned indicating that no adapter has been found.
 */
-func (builder *Builder) Filestore() (filestore.IFilestoreAdapter, error) {
+func (builder *Builder) Filestore() (IFilestoreAdapter, error) {
 	if builder.filestore != nil {
 		return builder.filestore, nil
 	}
@@ -137,7 +152,7 @@ If there are any errors during the connection or migration process, it returns a
 Once the connection and migration are successful, it returns nil.
 The method also prints out messages indicating the success of the connection and migration.
 */
-func (builder *Builder) connect(ds datastore.IDatastoreAdapter) (err error) {
+func (builder *Builder) connect(ds IDatastoreAdapter) (err error) {
 	//Initiate the connection with the database
 	err = ds.New()
 	if err != nil {
@@ -190,7 +205,7 @@ func (builder *Builder) Bootstrap() (sv *server.Server, err error) {
 	builder.connect(ds)
 
 	if config.C.Settings.Audit {
-		audit.New(ds)
+		newAudit(ds)
 	}
 
 	fs, err := builder.Filestore()

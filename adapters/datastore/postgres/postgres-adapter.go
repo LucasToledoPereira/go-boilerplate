@@ -3,7 +3,6 @@ package postgresadapter
 import (
 	"fmt"
 
-	"github.com/LucasToledoPereira/go-boilerplate/adapters/datastore"
 	"github.com/LucasToledoPereira/go-boilerplate/config"
 
 	"gorm.io/driver/postgres"
@@ -11,7 +10,7 @@ import (
 )
 
 type PostgresAdapter struct {
-	data *datastore.Data
+	db *gorm.DB
 }
 
 func (pa *PostgresAdapter) New() (err error) {
@@ -21,9 +20,7 @@ func (pa *PostgresAdapter) New() (err error) {
 		return err
 	}
 
-	pa.data = &datastore.Data{
-		DB: db,
-	}
+	pa.db = db
 
 	return nil
 }
@@ -33,7 +30,7 @@ func (pa *PostgresAdapter) Migrate() (err error) {
 }
 
 func (pa *PostgresAdapter) DB() (db *gorm.DB) {
-	return pa.data.DB
+	return pa.db
 }
 
 func connectDB() (db *gorm.DB, err error) {
